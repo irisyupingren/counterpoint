@@ -79,41 +79,30 @@ def getaboveoctave(note):
     i=interval.noteEnd
     return i
 
-def getaboveharmonic(note):
-    '''
-    Get the notes which are harmonic to the given lower part cantus firmus
-    '''
-    notelist=[]
+def get_above_harmonic (note):
+    """ Get the notes which are harmonic to the given lower part cantus firmus.
+        
+    Args:
+        note (music21.note.Note): The lower part cantus firmus.
 
-    interval = music21.interval.Interval('m3')
-    interval.noteStart = note
-    notelist.append(interval.noteEnd)
+    Returns:
+        list of music21.note.Note: A list of the notes which are harmonic to `note`.
+        
+    """
+    def get_note_end (desc):
+        """ Maps from a music21 interval description string (e.g. 'm3') to the end note above `note` in this scope.
+        
+        Args:
+            desc (str): The music21 interval description string (e.g. 'm3')
 
-    interval = music21.interval.Interval('M3')
-    interval.noteStart = note
-    notelist.append(interval.noteEnd)
-
-    interval = music21.interval.Interval('p4')
-    interval.noteStart = note
-    notelist.append(interval.noteEnd)
-
-    interval = music21.interval.Interval('p5')
-    interval.noteStart = note
-    notelist.append(interval.noteEnd)
-
-    interval = music21.interval.Interval('m6')
-    interval.noteStart = note
-    notelist.append(interval.noteEnd)
-
-    interval = music21.interval.Interval('M6')
-    interval.noteStart = note
-    notelist.append(interval.noteEnd)
-
-    interval = music21.interval.Interval('p8')
-    interval.noteStart = note
-    notelist.append(interval.noteEnd)
-
-    return notelist
+        Returns:
+            music21.note.Note: The end note at the specified interval above `note` in this scope.
+            
+        """
+        interval = music21.interval.Interval(desc)
+        interval.noteStart = note
+        return interval.noteEnd
+    return map(get_note_end, ['m3', 'M3',' p4', 'p5', 'm6', 'M6', 'p8'])
 
 def repeatnote(notebefore, note):
     '''
@@ -220,10 +209,10 @@ def firstspeciesabove(cf):
     temp=[]
     possibilities.append(getupperfirstnote(cf[0]))
     for n in range(1,len(cf)-2):
-        possibilities.append(getaboveharmonic(cf[n]))
+        possibilities.append(get_above_harmonic(cf[n]))
     temp.append(getabovemajorsix(cf[-2]))
     possibilities.append(temp)
-    possibilities.append(getaboveharmonic(cf[-1]))
+    possibilities.append(get_above_harmonic(cf[-1]))
     allpossibilities=getallpath(possibilities)
 
     c=0
