@@ -1,5 +1,5 @@
-from __future__ import division 
- 
+from __future__ import division
+
 import music21
 import numpy as np
 import random
@@ -7,6 +7,7 @@ import sys
 from random import randint
 import itertools
 import math
+import os
 
 def getinput(path):
     '''
@@ -655,8 +656,18 @@ def combinecfcp(cf, cp):
     sc.insert(0, p2)
     return sc
 
+# Ensure argument list is correct length.
+if len(sys.argv) != 3:
+    print("Usage: python counterpoint.py <input_file> <output_file>")
+    sys.exit()
+
+# Check input file exists.
+path = sys.argv[1]
+if not os.path.isfile(path):
+    print(f"Error: Input file '{path}' does not exist.")
+    sys.exit()
+
 # The cantus firmus file loading
-path='/Users/IrisYupingRen/Dropbox/counterpoint/cf/test4.xml'
 inputnotes=getinput(path)
 # Get the counterpoints and randomly select one and then make it a stream of music21
 cp=fromlisttostream(secondspeciesabove(inputnotes))
@@ -666,7 +677,7 @@ score=combinecfcp(inputnotes,cp)
 score.show()
 
 # Write the randomly picked answer to a midi file
-midifile= music21.midi.translate.streamToMidiFile(score)
-midifile.open('/Users/IrisYupingRen/Dropbox/counterpoint/test4secondspecies.mid', 'wb')
+midifile=music21.midi.translate.streamToMidiFile(score)
+midifile.open(sys.argv[2], 'wb')
 midifile.write()
 midifile.close()
