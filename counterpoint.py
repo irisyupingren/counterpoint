@@ -8,101 +8,118 @@ from random import randint
 import itertools
 import math
 import os
+from pprint import pprint
+from functools import partial
+from inspect import getmembers
 
-def getinput(path):
-    '''
-    The function convert musicxml files to numerical values
-    '''
-    cf = music21.converter.parse(path)
-    notelist=[]
-    cf.show('text')
-    for i in range(1,len(cf[2])):
-        measure=cf[2][i]
-        for note in measure:
-            if (type(note) is music21.note.Note):
-                notelist.append(note)
-    return notelist
+def get_input (path):
+    """ Converts a MusicXML file to a list of notes.
 
-def getupperfirstnote(note):
-    '''
-    Get all the possibility of the first note when the counterpoint is the upper part and the cantus firmus is the lower part
-    '''
-    notelist=[]
-
-    notelist.append(note)
-
-    interval = music21.interval.Interval('p5')
-    interval.noteStart = note
-    notelist.append(interval.noteEnd)
-
-    interval = music21.interval.Interval('p8')
-    interval.noteStart = note
-    notelist.append(interval.noteEnd)
-
-    notelist.append(note)
-    return notelist
-
-def getabovefifth(note):
-    '''
-    Get the note which is a fifth from the lower part cantus firmus
-    '''
-    interval = music21.interval.Interval('p5')
-    interval.noteStart = note
-    i=interval.noteEnd
-    i.quarterLength = 2
-    return i
-
-def getabovemajorsix(note):
-    interval = music21.interval.Interval('M6')
-    interval.noteStart = note
-    return interval.noteEnd
-
-def getabovesixth(note):
-    notelist=[]
-
-    interval = music21.interval.Interval('m6')
-    interval.noteStart = note
-    i=interval.noteEnd
-    i.quarterLength = 2
-    notelist.append(i)
-
-    interval = music21.interval.Interval('M6')
-    interval.noteStart = note
-    i=interval.noteEnd
-    i.quarterLength = 2
-    notelist.append(i)
-    return notelist
-
-def getaboveoctave(note):
-    interval = music21.interval.Interval('p8')
-    interval.noteStart = note
-    i=interval.noteEnd
-    return i
-
-def get_above_harmonic (note):
-    """ Get the notes which are harmonic to the given lower part cantus firmus.
-        
     Args:
-        note (music21.note.Note): The lower part cantus firmus.
+        path (str): The path of the file to load.
 
     Returns:
-        list of music21.note.Note: A list of the notes which are harmonic to `note`.
-        
-    """
-    def get_note_end (desc):
-        """ Maps from a music21 interval description string (e.g. 'm3') to the end note above `note` in this scope.
-        
-        Args:
-            desc (str): The music21 interval description string (e.g. 'm3')
+        list of music21.note.Note: A list of all notes in the file at `path`.
 
-        Returns:
-            music21.note.Note: The end note at the specified interval above `note` in this scope.
-            
-        """
-        interval = music21.interval.Interval(desc)
-        interval.noteStart = note
-        return interval.noteEnd
-    return map(get_note_end, ['m3', 'M3',' p4', 'p5', 'm6', 'M6', 'p8'])
+    """
+    score = music21.converter.parse(path)
+    notes = score.flat.notes # Flatten piece, get notes iterator.
+    return list(notes) # Using `list` consumes the whole iterator.
+
+def get_above_note (note, interval):
+    """ Computes the end note above a start note from a music21 interval description string (e.g. 'm3').
+
+    Args:
+        note (music21.note.Note): The start note.
+        interval (str): The music21 interval description string (e.g. 'm3').
+
+    Returns:
+        music21.note.Note: The end note at the specified interval above `note`.
+
+    """
+    interval = music21.interval.Interval(interval)
+    interval.noteStart = note # This assignment modifies `interval.noteEnd`.
+    return interval.noteEnd
+
+def get_above_notes (note, intervals):
+    """ Gets a list of the notes at the intervals given in `intervals` above `note`.
+
+    Args:
+        note (music21.note.Note): The start note.
+        intervals (list of str): A list of music21 interval description strings (e.g. 'm3').
+
+    Returns:
+        list of music21.note.Note: A list of the notes at the intervals above `note` specified in `intervals`.
+
+    """
+    # Curry `get_above_note` w.r.t. `note` to yield a single-param function we can use with `map`.
+    func = partial(get_above_note, note)
+    return list(map(func, intervals))
+
+def get_upper_first_note (root):
+    """ Get all the possibility of the first note when the counterpoint is the upper part and the cantus firmus is the lower part
+    """
+    return root + get_above_notes(root, ['p5', 'p8']) + root
+
+def get_above_fifth (root):
+    """ Get the note which is a fifth above the given root note.
+
+    Args:
+        note (music21.note.Note): The root note.
+
+    Returns:
+        music21.note.Note: The note which is a fifth above `root`.
+
+    """
+    return get_above_note(root, 'p5')
+
+def get_above_major_sixth (root):
+    """ Get the note which is a major sixth above the given root note.
+
+    Args:
+        note (music21.note.Note): The root note.
+
+    Returns:
+        music21.note.Note: The note which is a major sixth above `root`.
+
+    """
+    return get_above_note(root, 'M6')
+
+def get_above_sixth (root):
+    """ Get the notes which are a minor and major sixth above the given root note.
+
+    Args:
+        note (music21.note.Note): The root note.
+
+    Returns:
+        list of music21.note.Note: The notes which are a minor and major sixth above `root`.
+
+    """
+    return get_above_notes(root, ['m6', 'M6'])
+
+def get_above_octave (root):
+    """ Get the note which is an octave above the given root note.
+
+    Args:
+        note (music21.note.Note): The root note.
+
+    Returns:
+        music21.note.Note: The note which is one octave above `root`.
+
+    """
+    return get_above_note(root, 'p8')
+
+def get_above_harmonic (root):
+    """ Get the notes which are above and harmonic to the given root note.
+
+    Args:
+        note (music21.note.Note): The root note.
+
+    Returns:
+        list of music21.note.Note: A list of the notes which are harmonic to `root`.
+
+    """
+    return get_above_notes(root, ['m3', 'M3',' p4', 'p5', 'm6', 'M6', 'p8'])
 
 def repeatnote(notebefore, note):
     '''
@@ -200,17 +217,19 @@ def paralleloctave(cfnotebefore, notebefore, cfnote, note):
     return decision
 
 def getallpath(plist):
+    pprint(plist)
     allpath=list(itertools.product(*plist))
+    print(len(plist))
     return allpath
 
 def firstspeciesabove(cf):
     answer=[]
     possibilities=[]
     temp=[]
-    possibilities.append(getupperfirstnote(cf[0]))
+    possibilities.append(get_upper_first_note(cf[0]))
     for n in range(1,len(cf)-2):
         possibilities.append(get_above_harmonic(cf[n]))
-    temp.append(getabovemajorsix(cf[-2]))
+    temp.append(get_above_major_sixth(cf[-2]))
     possibilities.append(temp)
     possibilities.append(get_above_harmonic(cf[-1]))
     allpossibilities=getallpath(possibilities)
@@ -501,13 +520,13 @@ def secondspeciesabove(cf):
             possibilities.append(getaboveharmonic2(cf[o]))
 
     temp=[]
-    temp.append(getabovefifth(cf[-2]))
+    temp.append(get_above_fifth(cf[-2]))
     possibilities.append(temp)
 
-    possibilities.append(getabovesixth(cf[-2]))
+    possibilities.append(get_above_sixth(cf[-2]))
 
     temp=[]
-    temp.append(getaboveoctave(cf[-1]))
+    temp.append(get_above_octave(cf[-1]))
     possibilities.append(temp)
     allpossibilities=getallpath(possibilities)
 
@@ -657,7 +676,7 @@ if not os.path.isfile(path):
     sys.exit()
 
 # The cantus firmus file loading
-inputnotes=getinput(path)
+inputnotes = get_input(path)
 # Get the counterpoints and randomly select one and then make it a stream of music21
 cp=fromlisttostream(secondspeciesabove(inputnotes))
 # Combine the two voice
