@@ -56,10 +56,17 @@ def get_above_notes (note, intervals):
     func = partial(get_above_note, note)
     return list(map(func, intervals))
 
-def get_upper_first_note (root):
-    """ Get all the possibility of the first note when the counterpoint is the upper part and the cantus firmus is the lower part
+def get_upper_first_note (note):
+    """ Gets all possibilities for the first note of the counterpoint given the first note of the cantus firmus.
+
+    Args:
+        note (music21.note.Note): The first note of the cantus firmus.
+
+    Returns:
+        list of music21.note.Note: A list of possibilities for the first note of the counterpoint.
+
     """
-    return root + get_above_notes(root, ['p5', 'p8']) + root
+    return note + get_above_notes(note, ['p5', 'p8'])
 
 def get_above_fifth (root):
     """ Get the note which is a fifth above the given root note.
