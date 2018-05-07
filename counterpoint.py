@@ -52,7 +52,7 @@ def get_above_notes (note, intervals):
         list of music21.note.Note: A list of the notes at the intervals above `note` specified in `intervals`.
 
     """
-    # Curry `get_above_note` w.r.t. `note` to yield a single-param function we can use with `map`.
+    # Partial application of `get_above_note` to `note` to yield a single-param function we can use with `map`.
     func = partial(get_above_note, note)
     return list(map(func, intervals))
 
