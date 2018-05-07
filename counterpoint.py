@@ -224,9 +224,7 @@ def paralleloctave(cfnotebefore, notebefore, cfnote, note):
     return decision
 
 def getallpath(plist):
-    pprint(plist)
     allpath=list(itertools.product(*plist))
-    print(len(plist))
     return allpath
 
 def firstspeciesabove(cf):
