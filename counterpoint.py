@@ -147,7 +147,7 @@ def bigleap(notebefore, note):
     if notebefore.isRest:
         return False
     interval=music21.interval.notesToChromatic(notebefore, note)
-    if interval==music21.interval.ChromaticInterval(6) or interval==music21.interval.ChromaticInterval(9) or interval == music21.interval.ChromaticInterval(10) or interval == music21.interval.ChromaticInterval(11) or interval == music21.interval.ChromaticInterval(6) or interval == music21.interval.ChromaticInterval(-6) or interval == music21.interval.ChromaticInterval(-8) or interval == music21.interval.ChromaticInterval(-9) or interval == music21.interval.ChromaticInterval(-10) or interval == music21.interval.ChromaticInterval(-11):
+    if interval==music21.interval.ChromaticInterval(6) or interval==music21.interval.ChromaticInterval(9) or interval == music21.interval.ChromaticInterval(10) or interval == music21.interval.ChromaticInterval(11) or interval == music21.interval.ChromaticInterval(-6) or interval == music21.interval.ChromaticInterval(-8) or interval == music21.interval.ChromaticInterval(-9) or interval == music21.interval.ChromaticInterval(-10) or interval == music21.interval.ChromaticInterval(-11):
         decision=True
     elif interval==music21.interval.ChromaticInterval(8):
         decision = 6
