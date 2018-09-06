@@ -128,17 +128,18 @@ def get_above_harmonic (root):
     """
     return get_above_notes(root, ['m3', 'M3',' p4', 'p5', 'm6', 'M6', 'p8'])
 
-def repeatnote(notebefore, note):
-    '''
-    The function to check whether the input "notebefore" and "note" are the same note
-    '''
-    if notebefore.isRest:
-        return False
-    if notebefore.nameWithOctave == note.nameWithOctave:
-        decision = True
-    else:
-        decision = False
-    return decision
+def is_same_note (x, y):
+    """ Returns true if `x` and `y` are the same note, otherwise returns false.
+
+    Args:
+        x (music21.note.Note): The first note.
+        y (music21.note.Note): The second note.
+
+    Returns:
+        bool: True if `x` and `y` are the same note, otherwise false.
+
+    """
+    return not x.isRest and not y.isRest and x.nameWithOctave == y.nameWithOctave
 
 def bigleap(notebefore, note):
     '''
@@ -256,7 +257,7 @@ def firstspeciesabove(cf):
             note=plist[i]
             notebefore=plist[i-1]
             noteafter=plist[i+1]
-            if repeatnote(notebefore, note) == True:
+            if is_same_note(notebefore, note) == True:
                 f.write('Repeat note skipping:'+str(c))
                 f.write(' \n')
             if parallelfifth(cf[i-1], notebefore, cf[i], note)==True:
@@ -274,7 +275,7 @@ def firstspeciesabove(cf):
                     f.write('no recovery, break:'+str(c))
                     f.write(' \n')
 
-            if repeatnote(notebefore, note) == True:
+            if is_same_note(notebefore, note) == True:
                 flag=True
                 break
             if parallelfifth(cf[i-1], notebefore, cf[i], note)==True:
@@ -292,7 +293,7 @@ def firstspeciesabove(cf):
                     break
 
         if flag == False:
-            if repeatnote(plist[-2], plist[-1]) == True:
+            if is_same_note(plist[-2], plist[-1]) == True:
                 f.write('Repeat note skipping lastnote:'+str(c))
                 f.write(' \n')
             if parallelfifth(cf[-2], plist[-2], cf[-1], plist[-1])==True:
@@ -308,7 +309,7 @@ def firstspeciesabove(cf):
                 f.write('no recovery, break lastnote:'+str(c))
                 f.write(' \n')
 
-            if repeatnote(plist[-2], plist[-1]) == True:
+            if is_same_note(plist[-2], plist[-1]) == True:
                 flag=True
             if parallelfifth(cf[-2], plist[-2], cf[-1], plist[-1])==True:
                 flag=True
@@ -555,7 +556,7 @@ def secondspeciesabove(cf):
             noteafter=plist[i+1]
             o=int(math.floor(i/2))
 
-            if repeatnote(notebefore, note) == True:
+            if is_same_note(notebefore, note) == True:
                 f.write('Repeat note skipping')
                 f.write(' \n')
             if i % 2 ==0:
@@ -577,7 +578,7 @@ def secondspeciesabove(cf):
                     f.write('no recovery, break')
                     f.write(' \n')
 
-            if repeatnote(notebefore, note) == True:
+            if is_same_note(notebefore, note) == True:
                 flag=True
                 break
             if i % 2 ==0:
@@ -599,7 +600,7 @@ def secondspeciesabove(cf):
                     flag=True
                     break
         if flag == False:
-            if repeatnote(plist[-2], plist[-1]) == True:
+            if is_same_note(plist[-2], plist[-1]) == True:
                 f.write('Repeat note skipping')
                 f.write(' \n')
             if parallelfifth(cf[-2], plist[-3], cf[-1], plist[-1])==True:
@@ -619,7 +620,7 @@ def secondspeciesabove(cf):
                 f.write('Leap is too big skipping')
                 f.write(' \n')
 
-            if repeatnote(plist[-2], plist[-1]) == True:
+            if is_same_note(plist[-2], plist[-1]) == True:
                 flag=True
             if parallelfifth(cf[-2], plist[-3], cf[-1], plist[-1])==True:
                 flag=True
