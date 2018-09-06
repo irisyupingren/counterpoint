@@ -139,8 +139,8 @@ def is_same_note (x, y):
         bool: True if `x` and `y` are the same note, otherwise false.
 
     """
-    # return x.isRest == y.isRest and x.nameWithOctave == y.nameWithOctave
-    return not x.isRest and not y.isRest and x.nameWithOctave == y.nameWithOctave
+    return x.isRest == y.isRest and x.nameWithOctave == y.nameWithOctave
+    # return not x.isRest and not y.isRest and x.nameWithOctave == y.nameWithOctave
 
 def bigleap(notebefore, note):
     '''
