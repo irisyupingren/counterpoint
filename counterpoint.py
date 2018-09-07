@@ -154,20 +154,46 @@ class BigLeapType(Enum):
     OCTAVE_DOWN = auto()
 
 def is_chromatic_distance (interval, distance):
+    """ Returns true if an interval consists of the specified number of semitones.
+
+    Args:
+        interval (music21.interval.ChromaticInterval): The interval to check.
+        distance (int): The number of semitones.
+
+    Returns:
+        bool: True if `interval` consists of `distance` semitones, otherwise false.
+
+    """
     interval == music21.interval.ChromaticInterval(distance)
 
-def is_chromatic_distances (interval, distances):
-    """
+def is_chromatic_distance_in (interval, distances):
+    """ Returns true if an interval consists of any of the specified numbers of semitones.
+
+    Args:
+        interval (music21.interval.ChromaticInterval): The interval to check.
+        distances (list of int): The list of numbers of semitones.
+
+    Returns:
+        bool: True if `interval` consists of `distance` semitones, otherwise false.
+
     """
     any(map(partial(is_chromatic_distance, interval), distances))
 
 def big_leap_type (x, y):
-    """ The function to check whether the input "notebefore" and "note" consist a big 'leap'
+    """ Returns the type of big leap between two notes.
+
+    Args:
+        x (music21.note.Note): The first note.
+        y (music21.note.Note): The second note.
+
+    Returns:
+        BigLeapType: The type of big leap between the two notes (may be NOT_BIG_LEAP).
+
     """
     if x.isRest or y.isRest:
         return BigLeapType.NOT_BIG_LEAP
     interval = music21.interval.notesToChromatic(x, y)
-    if is_chromatic_distances(interval, [6, 9, 10, 11, -6, -8, -9, -10, -11]):
+    if is_chromatic_distance_in(interval, [6, 9, 10, 11, -6, -8, -9, -10, -11]):
         return BigLeapType.BIG_LEAP
     elif is_chromatic_distance(interval, 8):
         return BigLeapType.FIFTH
@@ -178,6 +204,16 @@ def big_leap_type (x, y):
     return BigLeapType.NOT_BIG_LEAP
 
 def is_special_leap (x, y):
+    """ Returns true if the interval between two notes is considered a special leap.
+
+    Args:
+        x (music21.note.Note): The first note.
+        y (music21.note.Note): The second note.
+
+    Returns:
+        bool: True if the interval between `x` and `y` is an octave above or below, or a fifth above, otherwise false.
+
+    """
     return big_leap_type(x, y) in [BigLeapType.FIFTH, BigLeapType.OCTAVE_UP, BigLeapType.OCTAVE_DOWN]
 
 def exposedtritone(notes):
