@@ -11,6 +11,7 @@ import os
 from pprint import pprint
 from functools import partial
 from inspect import getmembers
+from enum import Enum, auto, unique
 
 def get_input (path):
     """ Converts a MusicXML file to a list of notes.
@@ -142,24 +143,42 @@ def is_same_note (x, y):
     return x.isRest == y.isRest and x.nameWithOctave == y.nameWithOctave
     # return not x.isRest and not y.isRest and x.nameWithOctave == y.nameWithOctave
 
-def bigleap(notebefore, note):
-    '''
-    The function to check whether the input "notebefore" and "note" consist a big 'leap'
-    '''
-    if notebefore.isRest:
-        return False
-    interval=music21.interval.notesToChromatic(notebefore, note)
-    if interval==music21.interval.ChromaticInterval(6) or interval==music21.interval.ChromaticInterval(9) or interval == music21.interval.ChromaticInterval(10) or interval == music21.interval.ChromaticInterval(11) or interval == music21.interval.ChromaticInterval(-6) or interval == music21.interval.ChromaticInterval(-8) or interval == music21.interval.ChromaticInterval(-9) or interval == music21.interval.ChromaticInterval(-10) or interval == music21.interval.ChromaticInterval(-11):
-        decision=True
-    elif interval==music21.interval.ChromaticInterval(8):
-        decision = 6
-    elif interval==music21.interval.ChromaticInterval(12):
-        decision = 12
-    elif interval==music21.interval.ChromaticInterval(-12):
-        decision = -12
-    else:
-        decision=False
-    return decision
+@unique
+class BigLeapType(Enum):
+    """ An enumeration of types of big leap.
+    """
+    NOT_BIG_LEAP = auto()
+    BIG_LEAP = auto()
+    TRITONE = auto()
+    OCTAVE_UP = auto()
+    OCTAVE_DOWN = auto()
+
+def is_chromatic_distance (interval, distance):
+    interval == music21.interval.ChromaticInterval(distance)
+
+def is_chromatic_distances (interval, distances):
+    """ 
+    """
+    any(map(partial(is_chromatic_distance, interval), distances))
+
+def big_leap_type (x, y):
+    """ The function to check whether the input "notebefore" and "note" consist a big 'leap'
+    """
+    if x.isRest or y.isRest:
+        return BigLeapType.NOT_BIG_LEAP
+    interval = music21.interval.notesToChromatic(x, y)
+    if is_chromatic_distances(interval, [6, 9, 10, 11, -6, -8, -9, -10, -11]):
+        return BigLeapType.BIG_LEAP
+    elif is_chromatic_distance(interval, 6):
+        return BigLeapType.TRITONE
+    elif is_chromatic_distance(interval, 12):
+        return BigLeapType.OCTAVE_UP
+    elif is_chromatic_distance(interval, -12):
+        return BigLeapType.OCTAVE_DOWN
+    return BigLeapType.NOT_BIG_LEAP
+
+def is_special_leap (x, y):
+    return big_leap_type(x, y) in [BigLeapType.TRITONE, BigLeapType.OCTAVE_UP, BigLeapType.OCTAVE_DOWN]
 
 def exposedtritone(notes):
     intervalno=0
@@ -192,13 +211,13 @@ def recover(leap, note, noteafter):
     interval=music21.interval.Interval(note, noteafter)
     halfstep=interval.cents/100
     decision=False
-    if leap == 6 and halfstep > -6 and halfstep < 0:
+    if leap == BigLeapType.TRITONE and halfstep > -6 and halfstep < 0:
         decision = True
 
-    if leap == 12 and halfstep > -12 and halfstep < 0:
+    if leap == BigLeapType.OCTAVE_UP and halfstep > -12 and halfstep < 0:
         decision = True
 
-    if leap == -12 and halfstep < 12 and halfstep > 0:
+    if leap == BigLeapType.OCTAVE_DOWN and halfstep < 12 and halfstep > 0:
         decision = True
 
     return decision
@@ -267,12 +286,12 @@ def firstspeciesabove(cf):
             if paralleloctave(cf[i-1], notebefore, cf[i], note)==True:
                 f.write('paralleloctave skipping:'+str(c))
                 f.write(' \n')
-            if bigleap(notebefore, note)==True:
+            if big_leap_type(notebefore, note)==BigLeapType.BIG_LEAP:
                 f.write('Leap is too big skipping:'+str(c))
                 f.write(' \n')
-            if bigleap(notebefore, note)==6 or bigleap(notebefore, note)==12 or bigleap(notebefore, note)==-12:
-                # print("special leaps detected:"+str(bigleap(notebefore, note)))
-                if recover(bigleap(notebefore, note), note, noteafter)== False:
+            if big_leap_type(notebefore, note)==BigLeapType.TRITONE or big_leap_type(notebefore, note)==BigLeapType.OCTAVE_UP or big_leap_type(notebefore, note)==BigLeapType.OCTAVE_DOWN:
+                # print("special leaps detected:"+str(big_leap_type(notebefore, note)))
+                if recover(big_leap_type(notebefore, note), note, noteafter)==False:
                     f.write('no recovery, break:'+str(c))
                     f.write(' \n')
 
@@ -285,11 +304,11 @@ def firstspeciesabove(cf):
             if paralleloctave(cf[i-1], notebefore, cf[i], note)==True:
                 flag=True
                 break
-            if bigleap(notebefore, note)==True:
+            if big_leap_type(notebefore, note)==BigLeapType.BIG_LEAP:
                 flag=True
                 break
-            if bigleap(notebefore, note)==6 or bigleap(notebefore, note)==12 or bigleap(notebefore, note)==-12:
-                if recover(bigleap(notebefore, note), note, noteafter)== False:
+            if big_leap_type(notebefore, note)==BigLeapType.TRITONE or big_leap_type(notebefore, note)==BigLeapType.OCTAVE_UP or big_leap_type(notebefore, note)==BigLeapType.OCTAVE_DOWN:
+                if recover(big_leap_type(notebefore, note), note, noteafter)== False:
                     flag=True
                     break
 
@@ -303,10 +322,10 @@ def firstspeciesabove(cf):
             if paralleloctave(cf[-2], plist[-2], cf[-1], plist[-1])==True:
                 f.write('paralleloctave skipping lastnote:'+str(c))
                 f.write(' \n')
-            if bigleap(plist[-2], plist[-1])==True:
+            if big_leap_type(plist[-2], plist[-1])==BigLeapType.BIG_LEAP:
                 f.write('Leap is too big skipping lastnote:'+str(c))
                 f.write(' \n')
-            if bigleap(plist[-2], plist[-1])==6 or bigleap(plist[-2], plist[-1])==12 or bigleap(plist[-2], plist[-1])==-12:
+            if big_leap_type(plist[-2], plist[-1])==BigLeapType.TRITONE or big_leap_type(plist[-2], plist[-1])==BigLeapType.OCTAVE_UP or big_leap_type(plist[-2], plist[-1])==BigLeapType.OCTAVE_DOWN:
                 f.write('no recovery, break lastnote:'+str(c))
                 f.write(' \n')
 
@@ -316,7 +335,7 @@ def firstspeciesabove(cf):
                 flag=True
             if paralleloctave(cf[-2], plist[-2], cf[-1], plist[-1])==True:
                 flag=True
-            if bigleap(plist[-2], plist[-1])==True:
+            if big_leap_type(plist[-2], plist[-1])==BigLeapType.BIG_LEAP:
                 flag=True
 
         if flag==False:
@@ -571,11 +590,11 @@ def secondspeciesabove(cf):
                 if approleftstep(notebefore, note, noteafter)==False:
                     f.write('not approching by step')
                     f.write(' \n')
-            if bigleap(notebefore, note)==True:
+            if big_leap_type(notebefore, note)==BigLeapType.BIG_LEAP:
                 f.write('Leap is too big skipping')
                 f.write(' \n')
-            if bigleap(notebefore, note)==6 or bigleap(notebefore, note)==12 or bigleap(notebefore, note)==-12:
-                if recover(bigleap(notebefore, note), note, noteafter)== False:
+            if big_leap_type(notebefore, note)==BigLeapType.TRITONE or big_leap_type(notebefore, note)==BigLeapType.OCTAVE_UP or big_leap_type(notebefore, note)==BigLeapType.OCTAVE_DOWN:
+                if recover(big_leap_type(notebefore, note), note, noteafter)== False:
                     f.write('no recovery, break')
                     f.write(' \n')
 
@@ -593,11 +612,11 @@ def secondspeciesabove(cf):
                 if approleftstep(notebefore, note, noteafter)==False:
                     flag=True
                     break
-            if bigleap(notebefore, note)==True:
+            if big_leap_type(notebefore, note)==BigLeapType.BIG_LEAP:
                 flag=True
                 break
-            if bigleap(notebefore, note)==6 or bigleap(notebefore, note)==12 or bigleap(notebefore, note)==-12:
-                if recover(bigleap(notebefore, note), note, noteafter)== False:
+            if big_leap_type(notebefore, note)==BigLeapType.TRITONE or big_leap_type(notebefore, note)==BigLeapType.OCTAVE_UP or big_leap_type(notebefore, note)==BigLeapType.OCTAVE_DOWN:
+                if recover(big_leap_type(notebefore, note), note, noteafter)== False:
                     flag=True
                     break
         if flag == False:
@@ -614,10 +633,10 @@ def secondspeciesabove(cf):
                 if approleftstep(plist[-3], plist[-2], plist[-1])==False:
                     f.write('not approching by step')
                     f.write(' \n')
-            if bigleap(plist[-2], plist[-1])==True:
+            if big_leap_type(plist[-2], plist[-1])==BigLeapType.BIG_LEAP:
                 f.write('Leap is too big skipping')
                 f.write(' \n')
-            if bigleap(plist[-3], plist[-2])==True:
+            if big_leap_type(plist[-3], plist[-2])==BigLeapType.BIG_LEAP:
                 f.write('Leap is too big skipping')
                 f.write(' \n')
 
@@ -630,9 +649,9 @@ def secondspeciesabove(cf):
             if ifinharmonic(cf[-2],plist[-2])==True:
                 if approleftstep(plist[-3], plist[-2], plist[-1])==False:
                     flag=True
-            if bigleap(plist[-2], plist[-1])==True:
+            if big_leap_type(plist[-2], plist[-1])==BigLeapType.BIG_LEAP:
                 flag=True
-            if bigleap(plist[-3], plist[-2])==True:
+            if big_leap_type(plist[-3], plist[-2])==BigLeapType.BIG_LEAP:
                 flag=True
 
         if flag==False:
