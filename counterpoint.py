@@ -149,7 +149,7 @@ class BigLeapType(Enum):
     """
     NOT_BIG_LEAP = auto()
     BIG_LEAP = auto()
-    TRITONE = auto()
+    FIFTH = auto()
     OCTAVE_UP = auto()
     OCTAVE_DOWN = auto()
 
@@ -157,7 +157,7 @@ def is_chromatic_distance (interval, distance):
     interval == music21.interval.ChromaticInterval(distance)
 
 def is_chromatic_distances (interval, distances):
-    """ 
+    """
     """
     any(map(partial(is_chromatic_distance, interval), distances))
 
@@ -169,8 +169,8 @@ def big_leap_type (x, y):
     interval = music21.interval.notesToChromatic(x, y)
     if is_chromatic_distances(interval, [6, 9, 10, 11, -6, -8, -9, -10, -11]):
         return BigLeapType.BIG_LEAP
-    elif is_chromatic_distance(interval, 6):
-        return BigLeapType.TRITONE
+    elif is_chromatic_distance(interval, 8):
+        return BigLeapType.FIFTH
     elif is_chromatic_distance(interval, 12):
         return BigLeapType.OCTAVE_UP
     elif is_chromatic_distance(interval, -12):
@@ -178,7 +178,7 @@ def big_leap_type (x, y):
     return BigLeapType.NOT_BIG_LEAP
 
 def is_special_leap (x, y):
-    return big_leap_type(x, y) in [BigLeapType.TRITONE, BigLeapType.OCTAVE_UP, BigLeapType.OCTAVE_DOWN]
+    return big_leap_type(x, y) in [BigLeapType.FIFTH, BigLeapType.OCTAVE_UP, BigLeapType.OCTAVE_DOWN]
 
 def exposedtritone(notes):
     intervalno=0
@@ -211,7 +211,7 @@ def recover(leap, note, noteafter):
     interval=music21.interval.Interval(note, noteafter)
     halfstep=interval.cents/100
     decision=False
-    if leap == BigLeapType.TRITONE and halfstep > -6 and halfstep < 0:
+    if leap == BigLeapType.FIFTH and halfstep > -6 and halfstep < 0:
         decision = True
 
     if leap == BigLeapType.OCTAVE_UP and halfstep > -12 and halfstep < 0:
@@ -289,7 +289,7 @@ def firstspeciesabove(cf):
             if big_leap_type(notebefore, note)==BigLeapType.BIG_LEAP:
                 f.write('Leap is too big skipping:'+str(c))
                 f.write(' \n')
-            if big_leap_type(notebefore, note)==BigLeapType.TRITONE or big_leap_type(notebefore, note)==BigLeapType.OCTAVE_UP or big_leap_type(notebefore, note)==BigLeapType.OCTAVE_DOWN:
+            if is_special_leap(notebefore, note):
                 # print("special leaps detected:"+str(big_leap_type(notebefore, note)))
                 if recover(big_leap_type(notebefore, note), note, noteafter)==False:
                     f.write('no recovery, break:'+str(c))
@@ -307,7 +307,7 @@ def firstspeciesabove(cf):
             if big_leap_type(notebefore, note)==BigLeapType.BIG_LEAP:
                 flag=True
                 break
-            if big_leap_type(notebefore, note)==BigLeapType.TRITONE or big_leap_type(notebefore, note)==BigLeapType.OCTAVE_UP or big_leap_type(notebefore, note)==BigLeapType.OCTAVE_DOWN:
+            if is_special_leap(notebefore, note):
                 if recover(big_leap_type(notebefore, note), note, noteafter)== False:
                     flag=True
                     break
@@ -325,7 +325,7 @@ def firstspeciesabove(cf):
             if big_leap_type(plist[-2], plist[-1])==BigLeapType.BIG_LEAP:
                 f.write('Leap is too big skipping lastnote:'+str(c))
                 f.write(' \n')
-            if big_leap_type(plist[-2], plist[-1])==BigLeapType.TRITONE or big_leap_type(plist[-2], plist[-1])==BigLeapType.OCTAVE_UP or big_leap_type(plist[-2], plist[-1])==BigLeapType.OCTAVE_DOWN:
+            if is_special_leap(plist[-2], plist[-1]):
                 f.write('no recovery, break lastnote:'+str(c))
                 f.write(' \n')
 
@@ -593,7 +593,7 @@ def secondspeciesabove(cf):
             if big_leap_type(notebefore, note)==BigLeapType.BIG_LEAP:
                 f.write('Leap is too big skipping')
                 f.write(' \n')
-            if big_leap_type(notebefore, note)==BigLeapType.TRITONE or big_leap_type(notebefore, note)==BigLeapType.OCTAVE_UP or big_leap_type(notebefore, note)==BigLeapType.OCTAVE_DOWN:
+            if is_special_leap(notebefore, note):
                 if recover(big_leap_type(notebefore, note), note, noteafter)== False:
                     f.write('no recovery, break')
                     f.write(' \n')
@@ -615,7 +615,7 @@ def secondspeciesabove(cf):
             if big_leap_type(notebefore, note)==BigLeapType.BIG_LEAP:
                 flag=True
                 break
-            if big_leap_type(notebefore, note)==BigLeapType.TRITONE or big_leap_type(notebefore, note)==BigLeapType.OCTAVE_UP or big_leap_type(notebefore, note)==BigLeapType.OCTAVE_DOWN:
+            if is_special_leap(notebefore, note):
                 if recover(big_leap_type(notebefore, note), note, noteafter)== False:
                     flag=True
                     break
