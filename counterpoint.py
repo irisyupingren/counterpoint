@@ -175,7 +175,7 @@ def is_chromatic_distance_in (interval, distances):
         distances (list of int): The list of numbers of semitones.
 
     Returns:
-        bool: True if `interval` consists of `distance` semitones, otherwise false.
+        bool: True if `interval` consists of a number of semitones in `distances`, otherwise false.
 
     """
     # The `any` function is equivalent to folding using `or` with 'false' as the initialiser.
