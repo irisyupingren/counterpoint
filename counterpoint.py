@@ -143,10 +143,11 @@ def is_same_note (x, y):
     return x.isRest == y.isRest and x.nameWithOctave == y.nameWithOctave
     # return not x.isRest and not y.isRest and x.nameWithOctave == y.nameWithOctave
 
-@unique
+@unique # This annotaion forces all members of the enum to have distinct, unique values.
 class BigLeapType(Enum):
     """ An enumeration of types of big leap.
     """
+     # The `auto` function is used here because the numeric values of the enum members don't matter.
     NOT_BIG_LEAP = auto()
     BIG_LEAP = auto()
     FIFTH = auto()
@@ -177,6 +178,7 @@ def is_chromatic_distance_in (interval, distances):
         bool: True if `interval` consists of `distance` semitones, otherwise false.
 
     """
+    # The `any` function is equivalent to folding using `or` with 'false' as the initialiser.
     any(map(partial(is_chromatic_distance, interval), distances))
 
 def big_leap_type (x, y):
