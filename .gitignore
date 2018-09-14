@@ -1,3 +1,6 @@
+# travis CI
+# of course we need this .travis*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
