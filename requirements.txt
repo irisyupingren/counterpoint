@@ -1,10 +1,2 @@
 music21
 numpy
-random
-sys
-itertools
-math
-os
-pprint
-functools
-inspect
