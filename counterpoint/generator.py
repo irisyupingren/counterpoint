@@ -339,13 +339,13 @@ class Generator (object):
                 note=plist[i]
                 notebefore=plist[i-1]
                 noteafter=plist[i+1]
-                if Generator.is_same_note(notebefore, note) == True:
+                if Generator.is_same_note(notebefore, note):
                     f.write('Repeat note skipping:'+str(c))
                     f.write(' \n')
-                if Generator.parallelfifth(cf[i-1], notebefore, cf[i], note)==True:
+                if Generator.parallelfifth(cf[i-1], notebefore, cf[i], note):
                     f.write('parallelfifth skipping:'+str(c))
                     f.write(' \n')
-                if Generator.paralleloctave(cf[i-1], notebefore, cf[i], note)==True:
+                if Generator.paralleloctave(cf[i-1], notebefore, cf[i], note):
                     f.write('paralleloctave skipping:'+str(c))
                     f.write(' \n')
                 if Generator.big_leap_type(notebefore, note)==Generator.BigLeapType.BIG_LEAP:
@@ -353,35 +353,35 @@ class Generator (object):
                     f.write(' \n')
                 if Generator.is_special_leap(notebefore, note):
                     # print("special leaps detected:"+str(Generator.big_leap_type(notebefore, note)))
-                    if Generator.recover(Generator.big_leap_type(notebefore, note), note, noteafter)==False:
+                    if not Generator.recover(Generator.bigleap(notebefore, note), note, noteafter):
                         f.write('no recovery, break:'+str(c))
                         f.write(' \n')
 
-                if Generator.is_same_note(notebefore, note) == True:
+                if Generator.is_same_note(notebefore, note):
                     flag=True
                     break
-                if Generator.parallelfifth(cf[i-1], notebefore, cf[i], note)==True:
+                if Generator.parallelfifth(cf[i-1], notebefore, cf[i], note):
                     flag=True
                     break
-                if Generator.paralleloctave(cf[i-1], notebefore, cf[i], note)==True:
+                if Generator.paralleloctave(cf[i-1], notebefore, cf[i], note):
                     flag=True
                     break
                 if Generator.big_leap_type(notebefore, note)==Generator.BigLeapType.BIG_LEAP:
                     flag=True
                     break
                 if Generator.is_special_leap(notebefore, note):
-                    if Generator.recover(Generator.big_leap_type(notebefore, note), note, noteafter)== False:
+                    if not Generator.recover(Generator.bigleap(notebefore, note), note, noteafter):
                         flag=True
                         break
 
-            if flag == False:
-                if Generator.is_same_note(plist[-2], plist[-1]) == True:
+            if not flag:
+                if Generator.is_same_note(plist[-2], plist[-1]):
                     f.write('Repeat note skipping lastnote:'+str(c))
                     f.write(' \n')
-                if Generator.parallelfifth(cf[-2], plist[-2], cf[-1], plist[-1])==True:
+                if Generator.parallelfifth(cf[-2], plist[-2], cf[-1], plist[-1]):
                     f.write('parallelfifth skipping lastnote:'+str(c))
                     f.write(' \n')
-                if Generator.paralleloctave(cf[-2], plist[-2], cf[-1], plist[-1])==True:
+                if Generator.paralleloctave(cf[-2], plist[-2], cf[-1], plist[-1]):
                     f.write('paralleloctave skipping lastnote:'+str(c))
                     f.write(' \n')
                 if Generator.big_leap_type(plist[-2], plist[-1])==Generator.BigLeapType.BIG_LEAP:
@@ -391,16 +391,16 @@ class Generator (object):
                     f.write('no recovery, break lastnote:'+str(c))
                     f.write(' \n')
 
-                if Generator.is_same_note(plist[-2], plist[-1]) == True:
+                if Generator.is_same_note(plist[-2], plist[-1]):
                     flag=True
-                if Generator.parallelfifth(cf[-2], plist[-2], cf[-1], plist[-1])==True:
+                if Generator.parallelfifth(cf[-2], plist[-2], cf[-1], plist[-1]):
                     flag=True
-                if Generator.paralleloctave(cf[-2], plist[-2], cf[-1], plist[-1])==True:
+                if Generator.paralleloctave(cf[-2], plist[-2], cf[-1], plist[-1]):
                     flag=True
                 if Generator.big_leap_type(plist[-2], plist[-1])==Generator.BigLeapType.BIG_LEAP:
                     flag=True
 
-            if flag==False:
+            if not flag:
                 answer.append(plist)
         f.close()
 
@@ -644,61 +644,61 @@ class Generator (object):
                 noteafter=plist[i+1]
                 o=int(math.floor(i/2))
 
-                if Generator.is_same_note(notebefore, note) == True:
+                if Generator.is_same_note(notebefore, note):
                     f.write('Repeat note skipping')
                     f.write(' \n')
                 if i % 2 ==0:
-                    if Generator.parallelfifth(cf[o-1], notebefore2, cf[o], note)==True:
+                    if Generator.parallelfifth(cf[o-1], notebefore2, cf[o], note):
                         f.write('parallelfifth skipping')
                         f.write(' \n')
-                    if Generator.paralleloctave(cf[o-1], notebefore2, cf[o], note)==True:
+                    if Generator.paralleloctave(cf[o-1], notebefore2, cf[o], note):
                         f.write('paralleloctave skipping')
                         f.write(' \n')
-                if Generator.ifinharmonic(cf[o],note)==True:
-                    if Generator.approleftstep(notebefore, note, noteafter)==False:
+                if Generator.ifinharmonic(cf[o],note):
+                    if not Generator.approleftstep(notebefore, note, noteafter):
                         f.write('not approching by step')
                         f.write(' \n')
                 if Generator.big_leap_type(notebefore, note)==Generator.BigLeapType.BIG_LEAP:
                     f.write('Leap is too big skipping')
                     f.write(' \n')
                 if Generator.is_special_leap(notebefore, note):
-                    if Generator.recover(Generator.big_leap_type(notebefore, note), note, noteafter)== False:
+                    if not Generator.recover(Generator.bigleap(notebefore, note), note, noteafter):
                         f.write('no recovery, break')
                         f.write(' \n')
 
-                if Generator.is_same_note(notebefore, note) == True:
+                if Generator.is_same_note(notebefore, note):
                     flag=True
                     break
                 if i % 2 ==0:
-                    if Generator.parallelfifth(cf[o-1], notebefore2, cf[o], note)==True:
+                    if Generator.parallelfifth(cf[o-1], notebefore2, cf[o], note):
                         flag=True
                         break
-                    if Generator.paralleloctave(cf[o-1], notebefore2, cf[o], note)==True:
+                    if Generator.paralleloctave(cf[o-1], notebefore2, cf[o], note):
                         flag=True
                         break
-                if Generator.ifinharmonic(cf[o],note)==True:
-                    if Generator.approleftstep(notebefore, note, noteafter)==False:
+                if Generator.ifinharmonic(cf[o],note):
+                    if not Generator.approleftstep(notebefore, note, noteafter):
                         flag=True
                         break
                 if Generator.big_leap_type(notebefore, note)==Generator.BigLeapType.BIG_LEAP:
                     flag=True
                     break
                 if Generator.is_special_leap(notebefore, note):
-                    if Generator.recover(Generator.big_leap_type(notebefore, note), note, noteafter)== False:
+                    if not Generator.recover(Generator.bigleap(notebefore, note), note, noteafter):
                         flag=True
                         break
-            if flag == False:
-                if Generator.is_same_note(plist[-2], plist[-1]) == True:
+            if not flag:
+                if Generator.is_same_note(plist[-2], plist[-1]):
                     f.write('Repeat note skipping')
                     f.write(' \n')
-                if Generator.parallelfifth(cf[-2], plist[-3], cf[-1], plist[-1])==True:
+                if Generator.parallelfifth(cf[-2], plist[-3], cf[-1], plist[-1]):
                     f.write('parallelfifth skipping')
                     f.write(' \n')
-                if Generator.paralleloctave(cf[-2], plist[-3], cf[-1], plist[-1])==True:
+                if Generator.paralleloctave(cf[-2], plist[-3], cf[-1], plist[-1]):
                     f.write('paralleloctave skipping')
                     f.write(' \n')
-                if Generator.ifinharmonic(cf[-2],plist[-2])==True:
-                    if Generator.approleftstep(plist[-3], plist[-2], plist[-1])==False:
+                if Generator.ifinharmonic(cf[-2],plist[-2]):
+                    if not Generator.approleftstep(plist[-3], plist[-2], plist[-1]):
                         f.write('not approching by step')
                         f.write(' \n')
                 if Generator.big_leap_type(plist[-2], plist[-1])==Generator.BigLeapType.BIG_LEAP:
@@ -708,21 +708,21 @@ class Generator (object):
                     f.write('Leap is too big skipping')
                     f.write(' \n')
 
-                if Generator.is_same_note(plist[-2], plist[-1]) == True:
+                if Generator.is_same_note(plist[-2], plist[-1]):
                     flag=True
-                if Generator.parallelfifth(cf[-2], plist[-3], cf[-1], plist[-1])==True:
+                if Generator.parallelfifth(cf[-2], plist[-3], cf[-1], plist[-1]):
                     flag=True
-                if Generator.paralleloctave(cf[-2], plist[-3], cf[-1], plist[-1])==True:
+                if Generator.paralleloctave(cf[-2], plist[-3], cf[-1], plist[-1]):
                     flag=True
-                if Generator.ifinharmonic(cf[-2],plist[-2])==True:
-                    if Generator.approleftstep(plist[-3], plist[-2], plist[-1])==False:
+                if Generator.ifinharmonic(cf[-2],plist[-2]):
+                    if not Generator.approleftstep(plist[-3], plist[-2], plist[-1]):
                         flag=True
                 if Generator.big_leap_type(plist[-2], plist[-1])==Generator.BigLeapType.BIG_LEAP:
                     flag=True
                 if Generator.big_leap_type(plist[-3], plist[-2])==Generator.BigLeapType.BIG_LEAP:
                     flag=True
 
-            if flag==False:
+            if not flag:
                 answer.append(plist)
 
 
