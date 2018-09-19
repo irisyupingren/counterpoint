@@ -11,6 +11,7 @@ import os
 from pprint import pprint
 from functools import partial
 from inspect import getmembers
+from enum import Enum, auto, unique
 
 class Generator (object):
     """ Provides counterpoint generation functions.
@@ -156,25 +157,84 @@ class Generator (object):
         return x.isRest == y.isRest and x.nameWithOctave == y.nameWithOctave
         # return not x.isRest and not y.isRest and x.nameWithOctave == y.nameWithOctave
 
+    @unique # This annotaion forces all members of the enum to have distinct, unique values.
+    class BigLeapType(Enum):
+        """ An enumeration of types of big leap.
+        """
+         # The `auto` function is used here because the numeric values of the enum members don't matter.
+        NOT_BIG_LEAP = auto()
+        BIG_LEAP = auto()
+        FIFTH = auto()
+        OCTAVE_UP = auto()
+        OCTAVE_DOWN = auto()
+
     @staticmethod
-    def bigleap(notebefore, note):
-        '''
-        The function to check whether the input "notebefore" and "note" consist a big 'leap'
-        '''
-        if notebefore.isRest:
-            return False
-        interval=music21.interval.notesToChromatic(notebefore, note)
-        if interval==music21.interval.ChromaticInterval(6) or interval==music21.interval.ChromaticInterval(9) or interval == music21.interval.ChromaticInterval(10) or interval == music21.interval.ChromaticInterval(11) or interval == music21.interval.ChromaticInterval(-6) or interval == music21.interval.ChromaticInterval(-8) or interval == music21.interval.ChromaticInterval(-9) or interval == music21.interval.ChromaticInterval(-10) or interval == music21.interval.ChromaticInterval(-11):
-            decision=True
-        elif interval==music21.interval.ChromaticInterval(8):
-            decision = 6
-        elif interval==music21.interval.ChromaticInterval(12):
-            decision = 12
-        elif interval==music21.interval.ChromaticInterval(-12):
-            decision = -12
-        else:
-            decision=False
-        return decision
+    def is_chromatic_distance (interval, distance):
+        """ Returns true if an interval consists of the specified number of semitones.
+
+        Args:
+            interval (music21.interval.ChromaticInterval): The interval to check.
+            distance (int): The number of semitones.
+
+        Returns:
+            bool: True if `interval` consists of `distance` semitones, otherwise false.
+
+        """
+        interval == music21.interval.ChromaticInterval(distance)
+
+    @staticmethod
+    def is_chromatic_distance_in (interval, distances):
+        """ Returns true if an interval consists of any of the specified numbers of semitones.
+
+        Args:
+            interval (music21.interval.ChromaticInterval): The interval to check.
+            distances (list of int): The list of numbers of semitones.
+
+        Returns:
+            bool: True if `interval` consists of a number of semitones in `distances`, otherwise false.
+
+        """
+        # The `any` function is equivalent to folding using `or` with 'false' as the initialiser.
+        any(map(partial(Generator.is_chromatic_distance, interval), distances))
+
+    @staticmethod
+    def big_leap_type (x, y):
+        """ Returns the type of big leap between two notes.
+
+        Args:
+            x (music21.note.Note): The first note.
+            y (music21.note.Note): The second note.
+
+        Returns:
+            BigLeapType: The type of big leap between the two notes (may be NOT_BIG_LEAP).
+
+        """
+        if x.isRest or y.isRest:
+            return Generator.BigLeapType.NOT_BIG_LEAP
+        interval = music21.interval.notesToChromatic(x, y)
+        if Generator.is_chromatic_distance_in(interval, [6, 9, 10, 11, -6, -8, -9, -10, -11]):
+            return Generator.BigLeapType.BIG_LEAP
+        elif Generator.is_chromatic_distance(interval, 8):
+            return Generator.BigLeapType.FIFTH
+        elif Generator.is_chromatic_distance(interval, 12):
+            return Generator.BigLeapType.OCTAVE_UP
+        elif Generator.is_chromatic_distance(interval, -12):
+            return Generator.BigLeapType.OCTAVE_DOWN
+        return Generator.BigLeapType.NOT_BIG_LEAP
+
+    @staticmethod
+    def is_special_leap (x, y):
+        """ Returns true if the interval between two notes is considered a special leap.
+
+        Args:
+            x (music21.note.Note): The first note.
+            y (music21.note.Note): The second note.
+
+        Returns:
+            bool: True if the interval between `x` and `y` is an octave above or below, or a fifth above, otherwise false.
+
+        """
+        return Generator.big_leap_type(x, y) in [Generator.BigLeapType.FIFTH, Generator.BigLeapType.OCTAVE_UP, Generator.BigLeapType.OCTAVE_DOWN]
 
     @staticmethod
     def exposedtritone(notes):
@@ -209,13 +269,13 @@ class Generator (object):
         interval=music21.interval.Interval(note, noteafter)
         halfstep=interval.cents/100
         decision=False
-        if leap == 6 and halfstep > -6 and halfstep < 0:
+        if leap == Generator.BigLeapType.FIFTH and halfstep > -6 and halfstep < 0:
             decision = True
 
-        if leap == 12 and halfstep > -12 and halfstep < 0:
+        if leap == Generator.BigLeapType.OCTAVE_UP and halfstep > -12 and halfstep < 0:
             decision = True
 
-        if leap == -12 and halfstep < 12 and halfstep > 0:
+        if leap == Generator.BigLeapType.OCTAVE_DOWN and halfstep < 12 and halfstep > 0:
             decision = True
 
         return decision
@@ -313,11 +373,11 @@ class Generator (object):
                 if Generator.is_parallel_octave(cf[i-1], notebefore, cf[i], note):
                     f.write('paralleloctave skipping:'+str(c))
                     f.write(' \n')
-                if Generator.bigleap(notebefore, note)==True:
+                if Generator.big_leap_type(notebefore, note)==Generator.BigLeapType.BIG_LEAP:
                     f.write('Leap is too big skipping:'+str(c))
                     f.write(' \n')
-                if Generator.bigleap(notebefore, note)==6 or Generator.bigleap(notebefore, note)==12 or Generator.bigleap(notebefore, note)==-12:
-                    # print("special leaps detected:"+str(bigleap(notebefore, note)))
+                if Generator.is_special_leap(notebefore, note):
+                    # print("special leaps detected:"+str(Generator.big_leap_type(notebefore, note)))
                     if not Generator.recover(Generator.bigleap(notebefore, note), note, noteafter):
                         f.write('no recovery, break:'+str(c))
                         f.write(' \n')
@@ -331,10 +391,10 @@ class Generator (object):
                 if Generator.is_parallel_octave(cf[i-1], notebefore, cf[i], note):
                     flag=True
                     break
-                if Generator.bigleap(notebefore, note)==True:
+                if Generator.big_leap_type(notebefore, note)==Generator.BigLeapType.BIG_LEAP:
                     flag=True
                     break
-                if Generator.bigleap(notebefore, note)==6 or Generator.bigleap(notebefore, note)==12 or Generator.bigleap(notebefore, note)==-12:
+                if Generator.is_special_leap(notebefore, note):
                     if not Generator.recover(Generator.bigleap(notebefore, note), note, noteafter):
                         flag=True
                         break
@@ -349,10 +409,10 @@ class Generator (object):
                 if Generator.is_parallel_octave(cf[-2], plist[-2], cf[-1], plist[-1]):
                     f.write('paralleloctave skipping lastnote:'+str(c))
                     f.write(' \n')
-                if Generator.bigleap(plist[-2], plist[-1])==True:
+                if Generator.big_leap_type(plist[-2], plist[-1])==Generator.BigLeapType.BIG_LEAP:
                     f.write('Leap is too big skipping lastnote:'+str(c))
                     f.write(' \n')
-                if Generator.bigleap(plist[-2], plist[-1])==6 or Generator.bigleap(plist[-2], plist[-1])==12 or Generator.bigleap(plist[-2], plist[-1])==-12:
+                if Generator.is_special_leap(plist[-2], plist[-1]):
                     f.write('no recovery, break lastnote:'+str(c))
                     f.write(' \n')
 
@@ -362,7 +422,7 @@ class Generator (object):
                     flag=True
                 if Generator.is_parallel_octave(cf[-2], plist[-2], cf[-1], plist[-1]):
                     flag=True
-                if Generator.bigleap(plist[-2], plist[-1])==True:
+                if Generator.big_leap_type(plist[-2], plist[-1])==Generator.BigLeapType.BIG_LEAP:
                     flag=True
 
             if not flag:
@@ -623,10 +683,10 @@ class Generator (object):
                     if not Generator.approleftstep(notebefore, note, noteafter):
                         f.write('not approching by step')
                         f.write(' \n')
-                if Generator.bigleap(notebefore, note)==True:
+                if Generator.big_leap_type(notebefore, note)==Generator.BigLeapType.BIG_LEAP:
                     f.write('Leap is too big skipping')
                     f.write(' \n')
-                if Generator.bigleap(notebefore, note)==6 or Generator.bigleap(notebefore, note)==12 or Generator.bigleap(notebefore, note)==-12:
+                if Generator.is_special_leap(notebefore, note):
                     if not Generator.recover(Generator.bigleap(notebefore, note), note, noteafter):
                         f.write('no recovery, break')
                         f.write(' \n')
@@ -645,10 +705,10 @@ class Generator (object):
                     if not Generator.approleftstep(notebefore, note, noteafter):
                         flag=True
                         break
-                if Generator.bigleap(notebefore, note)==True:
+                if Generator.big_leap_type(notebefore, note)==Generator.BigLeapType.BIG_LEAP:
                     flag=True
                     break
-                if Generator.bigleap(notebefore, note)==6 or Generator.bigleap(notebefore, note)==12 or Generator.bigleap(notebefore, note)==-12:
+                if Generator.is_special_leap(notebefore, note):
                     if not Generator.recover(Generator.bigleap(notebefore, note), note, noteafter):
                         flag=True
                         break
@@ -666,10 +726,10 @@ class Generator (object):
                     if not Generator.approleftstep(plist[-3], plist[-2], plist[-1]):
                         f.write('not approching by step')
                         f.write(' \n')
-                if Generator.bigleap(plist[-2], plist[-1])==True:
+                if Generator.big_leap_type(plist[-2], plist[-1])==Generator.BigLeapType.BIG_LEAP:
                     f.write('Leap is too big skipping')
                     f.write(' \n')
-                if Generator.bigleap(plist[-3], plist[-2])==True:
+                if Generator.big_leap_type(plist[-3], plist[-2])==Generator.BigLeapType.BIG_LEAP:
                     f.write('Leap is too big skipping')
                     f.write(' \n')
 
@@ -682,9 +742,9 @@ class Generator (object):
                 if Generator.ifinharmonic(cf[-2],plist[-2]):
                     if not Generator.approleftstep(plist[-3], plist[-2], plist[-1]):
                         flag=True
-                if Generator.bigleap(plist[-2], plist[-1])==True:
+                if Generator.big_leap_type(plist[-2], plist[-1])==Generator.BigLeapType.BIG_LEAP:
                     flag=True
-                if Generator.bigleap(plist[-3], plist[-2])==True:
+                if Generator.big_leap_type(plist[-3], plist[-2])==Generator.BigLeapType.BIG_LEAP:
                     flag=True
 
             if not flag:
