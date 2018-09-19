@@ -221,28 +221,53 @@ class Generator (object):
         return decision
 
     @staticmethod
-    def parallelfifth(cfnotebefore, notebefore, cfnote, note):
-        if notebefore.isRest:
-            return False
-        intervalbefore=music21.interval.notesToInterval(cfnotebefore,notebefore)
-        intervalnow=music21.interval.notesToInterval(cfnote,note)
-        if intervalbefore == music21.interval.Interval('P5') and intervalnow == music21.interval.Interval('P5'):
-            decision=True
-        else:
-            decision=False
-        return decision
+    def is_interval (interval, x, y):
+        """ Returns true if `x` and `y` are at the interval specified, otherwise returns false.
+
+        Args:
+            interval (str): The music21 interval string of the interval to check for.
+            x (music21.note.Note): The first note.
+            y (music21.note.Note): The second note.
+
+        Returns:
+            bool: True if `x` and `y` are at the interval specified, otherwise false.
+
+        """
+        return music21.interval.notesToInterval(x, y) == music21.interval.Interval(interval)
 
     @staticmethod
-    def paralleloctave(cfnotebefore, notebefore, cfnote, note):
-        if notebefore.isRest:
-            return False
-        intervalbefore=music21.interval.notesToInterval(cfnotebefore,notebefore)
-        intervalnow=music21.interval.notesToInterval(cfnote,note)
-        if intervalbefore == music21.interval.Interval('P8') and intervalnow == music21.interval.Interval('P8'):
-            decision=True
-        else:
-            decision=False
-        return decision
+    def is_parallel_fifth (m, n, x, y):
+        """ Returns true if `m` and `n` and `x` and `y`, are each a fifth apart, otherwise returns false.
+
+        Args:
+            m (music21.note.Note): The first note of the first pair.
+            n (music21.note.Note): The second note of the first pair.
+            x (music21.note.Note): The first note of the second pair.
+            y (music21.note.Note): The second note of the second pair.
+
+        Returns:
+            bool: True if `m` and `n` and `x` and `y`, are each a fifth apart, otherwise false.
+
+        """
+        is_fifth = partial(Generator.is_interval, 'P5')
+        return (not n.isRest) and is_fifth(m, n) and is_fifth(x, y)
+
+    @staticmethod
+    def is_parallel_octave (m, n, x, y):
+        """ Returns true if `m` and `n` and `x` and `y`, are each an octave apart, otherwise returns false.
+
+        Args:
+            m (music21.note.Note): The first note of the first pair.
+            n (music21.note.Note): The second note of the first pair.
+            x (music21.note.Note): The first note of the second pair.
+            y (music21.note.Note): The second note of the second pair.
+
+        Returns:
+            bool: True if `m` and `n` and `x` and `y`, are each an octave apart, otherwise false.
+
+        """
+        is_octave = partial(Generator.is_interval, 'P8')
+        return (not n.isRest) and is_octave(m, n) and is_octave(x, y)
 
     @staticmethod
     def getallpath(plist):
@@ -282,10 +307,10 @@ class Generator (object):
                 if Generator.is_same_note(notebefore, note):
                     f.write('Repeat note skipping:'+str(c))
                     f.write(' \n')
-                if Generator.parallelfifth(cf[i-1], notebefore, cf[i], note):
+                if Generator.is_parallel_fifth(cf[i-1], notebefore, cf[i], note):
                     f.write('parallelfifth skipping:'+str(c))
                     f.write(' \n')
-                if Generator.paralleloctave(cf[i-1], notebefore, cf[i], note):
+                if Generator.is_parallel_octave(cf[i-1], notebefore, cf[i], note):
                     f.write('paralleloctave skipping:'+str(c))
                     f.write(' \n')
                 if Generator.bigleap(notebefore, note)==True:
@@ -300,10 +325,10 @@ class Generator (object):
                 if Generator.is_same_note(notebefore, note):
                     flag=True
                     break
-                if Generator.parallelfifth(cf[i-1], notebefore, cf[i], note):
+                if Generator.is_parallel_fifth(cf[i-1], notebefore, cf[i], note):
                     flag=True
                     break
-                if Generator.paralleloctave(cf[i-1], notebefore, cf[i], note):
+                if Generator.is_parallel_octave(cf[i-1], notebefore, cf[i], note):
                     flag=True
                     break
                 if Generator.bigleap(notebefore, note)==True:
@@ -318,10 +343,10 @@ class Generator (object):
                 if Generator.is_same_note(plist[-2], plist[-1]):
                     f.write('Repeat note skipping lastnote:'+str(c))
                     f.write(' \n')
-                if Generator.parallelfifth(cf[-2], plist[-2], cf[-1], plist[-1]):
+                if Generator.is_parallel_fifth(cf[-2], plist[-2], cf[-1], plist[-1]):
                     f.write('parallelfifth skipping lastnote:'+str(c))
                     f.write(' \n')
-                if Generator.paralleloctave(cf[-2], plist[-2], cf[-1], plist[-1]):
+                if Generator.is_parallel_octave(cf[-2], plist[-2], cf[-1], plist[-1]):
                     f.write('paralleloctave skipping lastnote:'+str(c))
                     f.write(' \n')
                 if Generator.bigleap(plist[-2], plist[-1])==True:
@@ -333,9 +358,9 @@ class Generator (object):
 
                 if Generator.is_same_note(plist[-2], plist[-1]):
                     flag=True
-                if Generator.parallelfifth(cf[-2], plist[-2], cf[-1], plist[-1]):
+                if Generator.is_parallel_fifth(cf[-2], plist[-2], cf[-1], plist[-1]):
                     flag=True
-                if Generator.paralleloctave(cf[-2], plist[-2], cf[-1], plist[-1]):
+                if Generator.is_parallel_octave(cf[-2], plist[-2], cf[-1], plist[-1]):
                     flag=True
                 if Generator.bigleap(plist[-2], plist[-1])==True:
                     flag=True
@@ -588,10 +613,10 @@ class Generator (object):
                     f.write('Repeat note skipping')
                     f.write(' \n')
                 if i % 2 ==0:
-                    if Generator.parallelfifth(cf[o-1], notebefore2, cf[o], note):
+                    if Generator.is_parallel_fifth(cf[o-1], notebefore2, cf[o], note):
                         f.write('parallelfifth skipping')
                         f.write(' \n')
-                    if Generator.paralleloctave(cf[o-1], notebefore2, cf[o], note):
+                    if Generator.is_parallel_octave(cf[o-1], notebefore2, cf[o], note):
                         f.write('paralleloctave skipping')
                         f.write(' \n')
                 if Generator.ifinharmonic(cf[o],note):
@@ -610,10 +635,10 @@ class Generator (object):
                     flag=True
                     break
                 if i % 2 ==0:
-                    if Generator.parallelfifth(cf[o-1], notebefore2, cf[o], note):
+                    if Generator.is_parallel_fifth(cf[o-1], notebefore2, cf[o], note):
                         flag=True
                         break
-                    if Generator.paralleloctave(cf[o-1], notebefore2, cf[o], note):
+                    if Generator.is_parallel_octave(cf[o-1], notebefore2, cf[o], note):
                         flag=True
                         break
                 if Generator.ifinharmonic(cf[o],note):
@@ -631,10 +656,10 @@ class Generator (object):
                 if Generator.is_same_note(plist[-2], plist[-1]):
                     f.write('Repeat note skipping')
                     f.write(' \n')
-                if Generator.parallelfifth(cf[-2], plist[-3], cf[-1], plist[-1]):
+                if Generator.is_parallel_fifth(cf[-2], plist[-3], cf[-1], plist[-1]):
                     f.write('parallelfifth skipping')
                     f.write(' \n')
-                if Generator.paralleloctave(cf[-2], plist[-3], cf[-1], plist[-1]):
+                if Generator.is_parallel_octave(cf[-2], plist[-3], cf[-1], plist[-1]):
                     f.write('paralleloctave skipping')
                     f.write(' \n')
                 if Generator.ifinharmonic(cf[-2],plist[-2]):
@@ -650,9 +675,9 @@ class Generator (object):
 
                 if Generator.is_same_note(plist[-2], plist[-1]):
                     flag=True
-                if Generator.parallelfifth(cf[-2], plist[-3], cf[-1], plist[-1]):
+                if Generator.is_parallel_fifth(cf[-2], plist[-3], cf[-1], plist[-1]):
                     flag=True
-                if Generator.paralleloctave(cf[-2], plist[-3], cf[-1], plist[-1]):
+                if Generator.is_parallel_octave(cf[-2], plist[-3], cf[-1], plist[-1]):
                     flag=True
                 if Generator.ifinharmonic(cf[-2],plist[-2]):
                     if not Generator.approleftstep(plist[-3], plist[-2], plist[-1]):
