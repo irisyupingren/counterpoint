@@ -154,7 +154,7 @@ class Generator (object):
             bool: True if `x` and `y` are the same note, otherwise false.
 
         """
-        return x.isRest == y.isRest and x.nameWithOctave == y.nameWithOctave
+        return x.isRest == y.isRest and x.nameWithOctave == y.nameWithOctave # TODO: Examine semantics here carefully.
         # return not x.isRest and not y.isRest and x.nameWithOctave == y.nameWithOctave
 
     @unique # This annotaion forces all members of the enum to have distinct, unique values.
@@ -209,7 +209,7 @@ class Generator (object):
             BigLeapType: The type of big leap between the two notes (may be NOT_BIG_LEAP).
 
         """
-        if x.isRest or y.isRest:
+        if x.isRest or y.isRest: # TODO: Examine semantics here carefully.
             return Generator.BigLeapType.NOT_BIG_LEAP
         interval = music21.interval.notesToChromatic(x, y)
         if Generator.is_chromatic_distance_in(interval, [6, 9, 10, 11, -6, -8, -9, -10, -11]):
@@ -265,20 +265,37 @@ class Generator (object):
         return decision
 
     @staticmethod
-    def recover(leap, note, noteafter):
-        interval=music21.interval.Interval(note, noteafter)
-        halfstep=interval.cents/100
-        decision=False
-        if leap == Generator.BigLeapType.FIFTH and halfstep > -6 and halfstep < 0:
-            decision = True
+    def get_half_steps (x, y):
+        """ Returns the number of half steps in the interval between two notes.
 
-        if leap == Generator.BigLeapType.OCTAVE_UP and halfstep > -12 and halfstep < 0:
-            decision = True
+        Args:
+            x (music21.note.Note): The first note.
+            y (music21.note.Note): The second note.
 
-        if leap == Generator.BigLeapType.OCTAVE_DOWN and halfstep < 12 and halfstep > 0:
-            decision = True
+        Returns:
+            int: The number of half steps in the interval between the two notes.
 
-        return decision
+        """
+        interval = music21.interval.Interval(x, y)
+        return interval.cents / 100
+
+    @staticmethod
+    def recover (leap, x, y):
+        """ Returns true if it is possible to recover from a given big leap between two notes, otherwise returns false.
+
+        Args:
+            x (counterpoint.Generator.BigLeapType): The big leap.
+            x (music21.note.Note): The first note.
+            y (music21.note.Note): The second note.
+
+        Returns:
+            bool: True if it is possible to recover from a given big leap between two notes, otherwise false.
+
+        """
+        half_steps = Generator.get_half_steps(x, y)
+        return ((leap == Generator.BigLeapType.FIFTH and half_steps > -6 and half_steps < 0)
+            or (leap == Generator.BigLeapType.OCTAVE_UP and half_steps > -12 and half_steps < 0)
+            or (leap == Generator.BigLeapType.OCTAVE_DOWN and half_steps < 12 and half_steps > 0))
 
     @staticmethod
     def is_interval (interval, x, y):
