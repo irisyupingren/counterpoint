@@ -13,7 +13,7 @@ class TestGenerator (unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_get_half_steps (self):
-        expected = 12
-        actual = Generator.get_half_steps(music21.interval.Interval('p8'))
+        expected = 4
+        actual = Generator.get_half_steps(music21.note.Note('C'), music21.note.Note('E'))
         self.assertEqual(expected, actual)
         
