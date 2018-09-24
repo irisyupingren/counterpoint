@@ -454,6 +454,19 @@ class Generator (object):
         return answer
 
     @staticmethod
+    def clone_note (note):
+        """ Clones a note.
+
+        Args:
+            note (music21.note.Note): The note to clone.
+
+        Returns:
+            music21.note.Note: The cloned note.
+
+        """
+        return music21.note.Note(str(note.nameWithOctave))
+
+    @staticmethod
     def getupperfirstnote2(n):
         notelist=[]
 
@@ -478,12 +491,45 @@ class Generator (object):
         return notelist
 
     @staticmethod
-    def getabovenotes2(note):
-        return Generator.get_above_notes(note, ['p1', 'm2', 'M2', 'm3', 'M3', 'p4', 'A4', 'p5', 'm6', 'M6', 'm7', 'M7', 'p8'])
+    def set_quarter_length (length, note):
+        """ Returns a copy of a note with its quarter length set to the length given.
+
+        Args:
+            length (int): The length to set.
+            note (music21.note.Note): The note to set the length on.
+
+        Returns:
+            music21.note.Note: The resultant note.
+
+        """
+        clone = clone_note(note) # Don't mutate original note.
+        clone.quarterLength = length
+        return clone
 
     @staticmethod
-    def getaboveharmonic2(note):
-        return Generator.get_above_notes(note, ['m3', 'M3', 'p4', 'p5', 'm6', 'M6', 'p8'])
+    def set_quarter_lengths (length, notes):
+        """ Returns a copy of a list of notes with their quarter lengths set to the length given.
+
+        Args:
+            length (int): The length to set.
+            notes (list of music21.note.Note): The notes to set the length on.
+
+        Returns:
+            list of music21.note.Note: The resultant notes.
+
+        """
+        func = partial(Generator.set_quarter_length, length)
+        return map(func, notes)
+
+    @staticmethod
+    def get_all_above_notes (note):
+        notes = Generator.get_above_notes(note, ['p1', 'm2', 'M2', 'm3', 'M3', 'p4', 'A4', 'p5', 'm6', 'M6', 'm7', 'M7', 'p8'])
+        return set_quarter_lengths(2, notes)
+
+    @staticmethod
+    def get_all_above_harmonic (note):
+        notes = Generator.get_above_notes(note, ['m3', 'M3', 'p4', 'p5', 'm6', 'M6', 'p8'])
+        return set_quarter_lengths(2, notes)
 
     @staticmethod
     def ifinharmonic(cf, note):
@@ -527,10 +573,10 @@ class Generator (object):
         for n in range(1,2*(len(cf))-4):
             # print("The nth note: "+str(n))
             if n % 2 == 1:
-                possibilities.append(Generator.getabovenotes2(cf[o]))
+                possibilities.append(Generator.get_all_above_notes(cf[o]))
                 o=o+1
             else:
-                possibilities.append(Generator.getaboveharmonic2(cf[o]))
+                possibilities.append(Generator.get_all_above_harmonic(cf[o]))
 
         temp=[]
         temp.append(Generator.get_above_fifth(cf[-2]))
