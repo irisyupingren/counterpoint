@@ -1,7 +1,7 @@
 from __future__ import division
 
 import music21
-import numpy as np
+import numpy
 import random
 import sys
 from random import randint
@@ -237,34 +237,6 @@ class Generator (object):
         return Generator.big_leap_type(x, y) in [Generator.BigLeapType.FIFTH, Generator.BigLeapType.OCTAVE_UP, Generator.BigLeapType.OCTAVE_DOWN]
 
     @staticmethod
-    def exposedtritone(notes):
-        intervalno=0
-        trend=[]
-        for i in range(0,len(notes)-1):
-            if notes[i].isRest:
-                trend.append(0)
-                continue
-            interval=music21.interval.Interval(notes[i], notes[i+1])
-            halfstep=interval.cents/100
-            intervalno=intervalno+float(abs(halfstep))
-
-            if halfstep>0:
-                trend.append(1)
-            elif halfstep<0:
-                trend.append(-1)
-            elif halfstep==0:
-                trend.append(0)
-
-
-
-            if i>=1 and intervalno == 6 and abs(trend[i-1]-trend[i])>=2:
-                decision=True
-            else:
-                decision=False
-
-        return decision
-
-    @staticmethod
     def get_half_steps (x, y):
         """ Returns the number of half steps in the interval between two notes.
 
@@ -278,6 +250,82 @@ class Generator (object):
         """
         interval = music21.interval.Interval(x, y)
         return interval.cents / 100
+
+    @staticmethod
+    def pairwise (x):
+        """ Pairs up each item in an interable with its adjacent neighbour.
+
+        pairwise(x) = (x[0], x[1]), (x[1], x[2]), (x[2], x[3]), ...
+
+        Args:
+            x (iterable): The iterable to take pairwise.
+
+        Returns:
+            iterable: The iterable formed by taking `x` pairwise.
+
+        """
+        a, b = itertools.tee(x) # Use `tee` to copy iterable.
+        next(b, None) # Move the `b` copy one step ahead.``
+        return zip(a, b) # Zip both iterables together.
+
+    @staticmethod
+    def get_direction (i, j):
+        """ Determines the direction of a skip.
+
+        Args:
+            i (music21.note.Note): The first note.
+            j (music21.note.Note): The secoond note.
+
+        Returns:
+            int: -1 for a downward pitch shift, 0 for no pitch shift and 1 for an upward pitch shift.
+
+        """
+        if i.isRest: # TODO: What if `j` is a rest?
+            return 0
+        half_steps = Generator.get_half_steps(i, j)
+        if half_steps > 0:
+            return 1
+        elif half_steps < 0:
+            return -1
+        elif half_steps == 0:
+            return 0
+
+    @staticmethod
+    def get_interval_magnitude (i, j):
+        """ Gets the magnitude (absolute size) of the interval between two notes in semitones.
+
+        Args:
+            i (music21.note.Note): The first note.
+            j (music21.note.Note): The second note.
+
+        Returns:
+            int: The magnitude (absolute size) of the interval between two notes in semitones.
+
+        """
+        return float(abs(Generator.get_half_steps(i, j))) # TODO: Do we need the explicit float cast here?
+
+    @staticmethod
+    def is_exposed_tritone (notes):
+        """ Checks for an exposed tritone in a list of notes.
+
+        Args:
+            notes (list of music21.note.Note): The list of notes to check.
+
+        Returns:
+            bool: True if the note list contains an exposed tritone, otherwise false.
+
+        """
+        note_pairs = Generator.pairwise(notes) # Pair up notes with their neighbours.
+        directions = map(lambda p : Generator.get_direction(p[0], p[1]), note_pairs) # Get direction of each skip.
+        direction_pairs = Generator.pairwise(directions) # Pair up directions with their neighbours.
+
+        # Calculate cumulative sum of the magnitude of each interval.
+        interval_magnitudes = map(lambda p : Generator.get_interval_magnitude(p[0], p[1]), note_pairs)
+        cumulative_magnitudes = numpy.cumsum(interval_magnitudes)
+
+        # Zip directions and interval magnitudes together into data points and decide.
+        points = zip(direction_pairs, cumulative_magnitudes)
+        return list(map(lambda p : p[1] == 6 and abs(p[0][1] - p[0][0]) >= 2, points))[-1]
 
     @staticmethod
     def recover (leap, x, y):
@@ -373,7 +421,7 @@ class Generator (object):
             print("running index:" +str(c))
             print("running answer"+str(plist))
 
-            if Generator.exposedtritone(plist):
+            if Generator.is_exposed_tritone(plist):
                 f.write('tritone')
                 break
 
@@ -598,7 +646,7 @@ class Generator (object):
             print("running index:" +str(c))
             print("running answer"+str(plist))
 
-            if Generator.exposedtritone(plist):
+            if Generator.is_exposed_tritone(plist):
                 f.write('tritone')
                 break
 
