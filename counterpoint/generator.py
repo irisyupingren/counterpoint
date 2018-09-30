@@ -502,7 +502,7 @@ class Generator (object):
             music21.note.Note: The resultant note.
 
         """
-        clone = clone_note(note) # Don't mutate original note.
+        clone = Generator.clone_note(note) # Don't mutate original note.
         clone.quarterLength = length
         return clone
 
@@ -524,12 +524,12 @@ class Generator (object):
     @staticmethod
     def get_all_above_notes (note):
         notes = Generator.get_above_notes(note, ['p1', 'm2', 'M2', 'm3', 'M3', 'p4', 'A4', 'p5', 'm6', 'M6', 'm7', 'M7', 'p8'])
-        return set_quarter_lengths(2, notes)
+        return Generator.set_quarter_lengths(2, notes)
 
     @staticmethod
     def get_all_above_harmonic (note):
         notes = Generator.get_above_notes(note, ['m3', 'M3', 'p4', 'p5', 'm6', 'M6', 'p8'])
-        return set_quarter_lengths(2, notes)
+        return Generator.set_quarter_lengths(2, notes)
 
     @staticmethod
     def ifinharmonic(cf, note):
